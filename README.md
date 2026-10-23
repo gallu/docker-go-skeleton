@@ -41,11 +41,48 @@ Docker Engine、Compose v2.20以降相当（`depends_on.required`対応）、Mak
 └── dist/            # 本番バイナリ
 ```
 
-Gitは空ディレクトリを保存しないため、clone後はsetupを実行してください。setupは既存ファイルや所有者・権限を変更しません。
+Gitは空ディレクトリを保存しないため、clone・ZIP展開後はsetupを実行してください。setupは既存ファイルや所有者・権限を変更しません。
 
 ## 初期セットアップ
 
+### ZIPで取得する場合
+
+GitHub上に新規リポジトリを作らず、手元に開発環境を用意する方法です。以下はLinux/WSLのホスト側シェルで実行し、`curl`と`unzip`が必要です。`my-go-app`は任意のプロジェクト名に変更できます。`docker-go-skeleton-main`や`my-go-app`、保存するZIPが既に存在する場合は、上書きせず別名または別の作業ディレクトリを使用してください。
+
+```bash
+# ZIPをダウンロード
+curl -fL -o docker-go-skeleton.zip \
+  https://github.com/gallu/docker-go-skeleton/archive/refs/heads/main.zip
+
+# ZIPを展開
+unzip docker-go-skeleton.zip
+
+# ディレクトリ名を変更
+mv docker-go-skeleton-main my-go-app
+
+# プロジェクトへ移動
+cd my-go-app
+
+# 初期セットアップ
+sh scripts/setup.sh
+
+# 環境変数ファイルを作成
+cp .env.sample .env
+
+# 不要になったZIPを削除
+rm ../docker-go-skeleton.zip
+```
+
+Privateリポジトリは匿名ではダウンロードできません。Public公開後はGitHubアカウントなしでも取得できます。ZIPにはGit履歴が含まれないため、Gitで管理する場合は必要に応じて`git init`してください。ただし、既定では`src/`と`dist/`はGit管理対象外です。[GitHub公式のZIP取得説明](https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives)も参照してください。
+
+### GitHub Templateから作成する場合
+
+GitHubにログインし、このリポジトリの「Use this template」→「Create a new repository」から所有者・名前・公開範囲を指定して作成し、新しいリポジトリをcloneします。詳細は[GitHub公式ドキュメント](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template)を参照してください。
+
+### 取得後の初期化とアプリ配置
+
 以下はすべてリポジトリルートのホスト側シェルで実行します。
+ZIPの手順でsetupと`.env`作成を済ませた場合は、次の2コマンドを省略してGoモジュールの初期化へ進んでください。
 
 ```bash
 sh scripts/setup.sh
@@ -240,7 +277,11 @@ GO_BUILD_TARGET=./cmd/batch GO_BINARY_NAME=batch make build
 GOOS=linux GOARCH=arm64 make build
 ```
 
-Linuxでは既定コンテナがrootで動くため、モジュール操作やビルド成果物がroot所有になる場合があります。必要に応じ、ComposeのGoサービスに`user: "UID:GID"`を設定し、書込み可能な`GOCACHE`・`GOPATH`（例: `/tmp/go-build`・`/tmp/gopath`）をenvironmentへ追加してください。UID/GIDはホストの`id`で確認します。setupは再帰的chown/chmodを行いません。
+Linux/WSLでは`make build`を実行したユーザーのUID/GID（`id -u`・`id -g`）で本番ビルド用の一時コンテナを実行します。`GOCACHE=/tmp/go-build`、`GOPATH=/tmp/gopath`、`GOMODCACHE=/tmp/gopath/pkg/mod`を指定し、キャッシュは一時コンテナの削除とともに破棄します。ビルドで`go.mod`・`go.sum`を作成・更新する場合も同じUID/GIDで書き込みます。`src/`内の更新対象と`dist/`には実行ユーザーの書き込み権限が必要です。
+
+既存の`dist/app`がroot所有でも、親の`dist/`に書き込み・実行権限があり、sticky bitなどによる削除制限がなければ、ビルド成功後に実行ユーザー所有の新しいバイナリへ置き換えられます。`dist/`自体がroot所有で書き込めない場合は、管理者がそのディレクトリの権限を個別に調整してください。setupやビルドはホストの`src/`・`dist/`を再帰的にchown/chmodしません。開発用Goコンテナ・Airの実行ユーザーと設定は変更していません。
+
+所有者の一致を想定する対応範囲はLinux/WSLのLinuxファイルシステム上です。macOSのDocker DesktopやWindows側のファイルシステムでは、共有ファイルの所有者・権限はマウント方式に依存するためUID/GIDの一致を保証しません。WindowsのPowerShell/cmdでの直接実行は対象外です。WSLのLinux側シェルとファイルシステムを使用してください。
 
 ### Goバージョンとcgo
 

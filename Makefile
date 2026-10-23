@@ -34,7 +34,8 @@ exec-pg:
 
 build:
 	sh scripts/setup.sh
-	docker compose run --rm --no-deps --build go build.sh
+	docker compose run --rm --no-deps --build --user "$$(id -u):$$(id -g)" \
+		-e GOCACHE=/tmp/go-build -e GOPATH=/tmp/gopath -e GOMODCACHE=/tmp/gopath/pkg/mod go build.sh
 
 all-clean:
 	docker system prune -f
