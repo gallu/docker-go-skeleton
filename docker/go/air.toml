@@ -1,0 +1,20 @@
+root = "/app"
+tmp_dir = "/tmp/air"
+env_files = []
+
+[build]
+cmd = "dev-build.sh"
+entrypoint = ["/tmp/air/app"]
+include_ext = ["go", "mod", "sum", "html", "tmpl", "tpl"]
+exclude_dir = [".git", "vendor", "tmp", "dist"]
+delay = 500
+stop_on_error = true
+send_interrupt = true
+kill_delay = "1s"
+log = "build-errors.log"
+
+[misc]
+clean_on_exit = true
+
+[screen]
+clear_on_rebuild = false

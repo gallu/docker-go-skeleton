@@ -1,0 +1,7 @@
+/src/
+/dist/
+/.env
+*.log
+.DS_Store
+*.swp
+*.swo

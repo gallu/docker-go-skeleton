@@ -1,0 +1,17 @@
+server {
+    listen 80;
+    server_name localhost;
+    client_max_body_size 20M;
+
+    # Goコンテナの再作成後もDocker DNSから新しいアドレスを取得する。
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    set $go_backend go:${GO_PORT};
+    location / {
+        proxy_pass http://$go_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
