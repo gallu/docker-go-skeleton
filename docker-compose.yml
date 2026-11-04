@@ -2,7 +2,9 @@ services:
   nginx:
     build: ./docker/nginx
     ports:
-      - "${WEB_PORT:-8081}:80"
+      - "127.0.0.1:${WEB_PORT:-8081}:80"
+      # 外部公開時は上の行をコメントアウトし、次の行を有効にする。
+      # - "${WEB_PORT:-8081}:80" # 全インターフェース公開
     environment:
       GO_PORT: ${GO_PORT:-8080}
       NGINX_ENVSUBST_FILTER: ^GO_PORT$$
