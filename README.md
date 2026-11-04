@@ -183,7 +183,9 @@ make ps
 make logs
 ```
 
-`http://localhost:8081/`へアクセスします。ポート変更時は`WEB_PORT`の値を使用してください。DB切替コマンドは不要側DBを停止してから起動します。データは保持します。profilesなしの`docker compose up`ではDBは起動しません。Goは選択されたDBのhealthcheck成功を待ちます。アプリ側にも接続リトライ・切断回復が必要です。
+`http://localhost:8081/`へアクセスします。ポート変更時は`WEB_PORT`の値を使用してください。DB切替コマンドは不要側DBを停止しますが、コンテナは削除せず停止状態で保持します。named volumeのデータも残り、停止対象が存在しない初回起動でも実行できます。profilesなしの`docker compose up`ではDBは起動しません。Goは選択されたDBのhealthcheck成功を待ちます。アプリ側にも接続リトライ・切断回復が必要です。
+
+nginxの公開ポートは既定で`127.0.0.1:<WEB_PORT>`にバインドされ、ホスト自身からのみアクセスできます。外部公開する場合は`docker-compose.yml`のnginxの`ports`で`127.0.0.1:${WEB_PORT:-8081}:80`の行をコメントアウトし、直下の全インターフェース公開用の行を有効にしてください。両方を同時に有効にしないでください。Dockerのポート公開はホストの通常のファイアウォール規則を迂回する場合があるため、公開先とファイアウォールの実効設定を確認してください。開発用のこの環境をそのまま本番公開することは推奨しません。
 
 nginxだけがホストへポートを公開します。Go・DB・RedisはComposeネットワーク内のサービス名で接続します。ホスト公開がないことは、ネットワーク内の他サービスからの接続を禁止する意味ではありません。
 
@@ -239,8 +241,8 @@ RedisはPHP版同様、AOFなしの開発用途です。永続化を保証しま
 | コマンド | 動作 |
 |---|---|
 | make up | 両DBを含む開発環境起動・ビルド |
-| make up-mysql | PostgreSQLを停止しMySQL構成を起動 |
-| make up-pg | MySQLを停止しPostgreSQL構成を起動 |
+| make up-mysql | PostgreSQLコンテナを削除せず停止し、MySQL構成を起動 |
+| make up-pg | MySQLコンテナを削除せず停止し、PostgreSQL構成を起動 |
 | make down | 全profilesのコンテナ・ネットワークを削除。DB volume保持 |
 | make clean | 当該Composeプロジェクトのコンテナ・ネットワーク・ローカルビルドイメージ・volumeを削除 |
 | make ps | 全profilesの状態表示 |

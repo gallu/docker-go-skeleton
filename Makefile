@@ -4,12 +4,14 @@ up:
 	docker compose --profile mysql --profile postgres up -d --build --remove-orphans
 
 up-mysql:
-	docker compose --profile postgres stop postgres
-	docker compose --profile mysql up -d --build --remove-orphans
+	@containers=$$(docker compose --profile postgres ps -q postgres) || exit $$?; \
+	if [ -n "$$containers" ]; then docker compose --profile postgres stop postgres; fi
+	docker compose --profile mysql up -d --build
 
 up-pg:
-	docker compose --profile mysql stop mysql
-	docker compose --profile postgres up -d --build --remove-orphans
+	@containers=$$(docker compose --profile mysql ps -q mysql) || exit $$?; \
+	if [ -n "$$containers" ]; then docker compose --profile mysql stop mysql; fi
+	docker compose --profile postgres up -d --build
 
 down:
 	docker compose --profile mysql --profile postgres down
